@@ -1,0 +1,17 @@
+{
+  "name": "docfx-chat",
+  "type": "module",
+  "version": "2.3.1",
+  "private": true,
+  "scripts": {
+    "dev": "pnpm dev:docfx",
+    "dev:docfx": "pnpm --filter docfx-site dev",
+    "release": "pnpm --filter astro-resume release",
+    "release:major": "pnpm --filter astro-resume release:major",
+    "release:minor": "pnpm --filter astro-resume release:minor",
+    "release:patch": "pnpm --filter astro-resume release:patch"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1"
+  }
+}
