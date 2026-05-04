@@ -1,4 +1,4 @@
-# Getting Started
+# docfx RAG
 
 A documentation site powered by [docfx](https://dotnet.github.io/docfx/) with Retrieval-Augmented Generation (RAG) capabilities using **Qdrant** vector database and **Ollama** local LLM.
 

@@ -1,0 +1,18 @@
+{
+  "name": "docfx-site",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "dev": "concurrently  \"pnpm run rag:setup\" \"docfx docfx.json --serve\" \"python -m uvicorn main:app --reload --host 127.0.0.1 --port 8000 --app-dir chat-api\"",
+    "postinstall": "pip install -r chat-api/requirements.txt",
+    "rag:qdrant:up": "podman compose up -d qdrant",
+    "rag:qdrant:down": "podman compose down",
+    "rag:index": "python chat-api/index_docs.py",
+    "rag:setup": "pnpm rag:qdrant:up && sleep 3 && pnpm rag:index"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "packageManager": "pnpm@10.22.0"
+}
