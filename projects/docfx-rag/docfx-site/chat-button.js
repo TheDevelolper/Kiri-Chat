@@ -3,6 +3,7 @@ class ChatButton extends HTMLElement {
     super();
     this.attachShadow({ mode: 'open' });
     this.isOpen = false;
+    this.markedLoaded = false;
   }
 
   connectedCallback() {
@@ -127,6 +128,44 @@ class ChatButton extends HTMLElement {
           border: 1px solid #e0e0e0;
         }
 
+        .message.bot p {
+          margin: 0 0 8px 0;
+        }
+
+        .message.bot p:last-child {
+          margin-bottom: 0;
+        }
+
+        .message.bot code {
+          background: #f0f0f0;
+          padding: 2px 4px;
+          border-radius: 3px;
+          font-size: 0.9em;
+        }
+
+        .message.bot pre {
+          background: #f5f5f5;
+          padding: 8px;
+          border-radius: 4px;
+          overflow-x: auto;
+          margin: 8px 0;
+        }
+
+        .message.bot pre code {
+          background: none;
+          padding: 0;
+        }
+
+        .message.bot ul, .message.bot ol {
+          margin: 8px 0;
+          padding-left: 20px;
+        }
+
+        .message.bot a {
+          color: #0078d4;
+          text-decoration: underline;
+        }
+
         .chat-input {
           display: flex;
           padding: 12px;
@@ -158,14 +197,14 @@ class ChatButton extends HTMLElement {
       </style>
       <div class="chat-window" id="chatWindow">
         <div class="chat-header">
-          <h3>Chat</h3>
+          <h3>Chat with Kiri</h3>
           <button class="close-btn" id="closeBtn">×</button>
         </div>
         <div class="chat-messages" id="chatMessages">
           <div class="message bot">Hello! How can I help you today?</div>
         </div>
         <div class="chat-input">
-          <input type="text" id="messageInput" placeholder="Type a message...">
+          <input type="text" id="messageInput" placeholder="Type a message..." value="Tell me about the Prerequisites" />
           <button id="sendBtn">Send</button>
         </div>
       </div>
@@ -210,6 +249,25 @@ class ChatButton extends HTMLElement {
     this.classList.toggle('chat-open', this.isOpen);
   }
 
+  async loadMarked() {
+    if (this.markedLoaded) return;
+    return new Promise((resolve, reject) => {
+      if (typeof marked !== 'undefined') {
+        this.markedLoaded = true;
+        resolve();
+        return;
+      }
+      const script = document.createElement('script');
+      script.src = 'https://cdn.jsdelivr.net/npm/marked/marked.min.js';
+      script.onload = () => {
+        this.markedLoaded = true;
+        resolve();
+      };
+      script.onerror = reject;
+      document.head.appendChild(script);
+    });
+  }
+
   async sendMessage() {
     const messageInput = this.shadowRoot.querySelector('#messageInput');
     const chatMessages = this.shadowRoot.querySelector('#chatMessages');
@@ -226,6 +284,7 @@ class ChatButton extends HTMLElement {
     chatMessages.scrollTop = chatMessages.scrollHeight;
 
     try {
+      await this.loadMarked();
       const response = await fetch('http://localhost:8000/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -236,7 +295,7 @@ class ChatButton extends HTMLElement {
 
       const botMessage = document.createElement('div');
       botMessage.className = 'message bot';
-      botMessage.textContent = data.response;
+      botMessage.innerHTML = marked.parse(data.response || '');
       chatMessages.appendChild(botMessage);
     } catch (error) {
       const errorMessage = document.createElement('div');

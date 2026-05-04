@@ -35,7 +35,12 @@ async def chat_endpoint(msg: Message):
             # 1. Generate embedding
             embed_resp = await client.post(
                 f"{OLLAMA_URL}/api/embed",
+
                 json={
+                "options": {
+                    "num_predict": 512,
+                    "temperature": 0
+                },
                     "model": EMBED_MODEL,
                     "input": msg.message,
                 },
@@ -102,13 +107,23 @@ async def chat_endpoint(msg: Message):
                     )
 
             context = "\n\n---\n\n".join(chunks)
+
+            if not context:
+                return {
+                    "response": "I couldn't find anything relevant in the documentation.",
+                    "debug": {
+                        "message": msg.message,
+                        "semantic_results_count": len(semantic_result.points),
+                        "keyword_results_count": len(keyword_points),
+                    },
+                }
             # 3. Ask Ollama
             system_prompt = (
                 "You are a helpful documentation assistant. "
-                "Use the documentation context below to answer the user's question. "
+                "Answer the user's question using the documentation context below. "
                 "When the context contains a list, include the full relevant list. "
-                "Do not omit prerequisites, commands, or setup steps that appear in the context. "
-                "If the context does not contain the answer, say you could not find it in the docs.\n\n"
+                "Do not omit prerequisites, commands, scripts, or setup steps that appear in the context. "
+                "Do not invent details that are not present in the context.\n\n"
                 f"Documentation context:\n\n{context}"
             )
 
