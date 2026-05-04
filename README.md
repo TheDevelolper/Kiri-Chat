@@ -8,6 +8,7 @@ The repository includes a scaffolded DocFX documentation site (located in `proje
 ## Getting Started
 ### Prerequisites
 - [.NET SDK](https://dotnet.microsoft.com/download) (required to run the DocFX CLI)
+- [DocFx](https://dotnet.github.io/docfx/) install with `dotnet tool install -g docfx` 
 - [pnpm](https://pnpm.io/) (v10.22.0 or later)
 - Python 3.x (required for the FastAPI backend)
 

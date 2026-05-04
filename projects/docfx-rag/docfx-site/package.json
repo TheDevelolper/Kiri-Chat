@@ -4,7 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "dev": "docfx docfx.json --serve"
+    "dev": "concurrently \"docfx docfx.json --serve\" \"uvicorn main:app --reload --host 127.0.0.1 --port 8000 --app-dir chat-api\"",
+    "postinstall": "pip install -r chat-api/requirements.txt"
   },
   "keywords": [],
   "author": "",

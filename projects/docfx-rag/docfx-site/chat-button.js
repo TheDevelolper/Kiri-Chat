@@ -210,7 +210,7 @@ class ChatButton extends HTMLElement {
     this.classList.toggle('chat-open', this.isOpen);
   }
 
-  sendMessage() {
+  async sendMessage() {
     const messageInput = this.shadowRoot.querySelector('#messageInput');
     const chatMessages = this.shadowRoot.querySelector('#chatMessages');
     const text = messageInput.value.trim();
@@ -225,13 +225,27 @@ class ChatButton extends HTMLElement {
     messageInput.value = '';
     chatMessages.scrollTop = chatMessages.scrollHeight;
 
-    setTimeout(() => {
+    try {
+      const response = await fetch('http://localhost:8000/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: text })
+      });
+
+      const data = await response.json();
+
       const botMessage = document.createElement('div');
       botMessage.className = 'message bot';
-      botMessage.textContent = 'Thanks for your message! This is a placeholder response.';
+      botMessage.textContent = data.response;
       chatMessages.appendChild(botMessage);
-      chatMessages.scrollTop = chatMessages.scrollHeight;
-    }, 500);
+    } catch (error) {
+      const errorMessage = document.createElement('div');
+      errorMessage.className = 'message bot';
+      errorMessage.textContent = 'Error: Could not reach the chat API.';
+      chatMessages.appendChild(errorMessage);
+    }
+
+    chatMessages.scrollTop = chatMessages.scrollHeight;
   }
 }
 
