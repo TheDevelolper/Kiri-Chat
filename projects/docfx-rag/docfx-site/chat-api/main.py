@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
+import httpx
 
 app = FastAPI(title="Chat API")
 
@@ -17,9 +18,18 @@ class Message(BaseModel):
 
 @app.post("/chat")
 async def chat_endpoint(msg: Message):
-    return {
-        "response": f"Thanks for your message: '{msg.message}'. This is a placeholder response from the Python API."
-    }
+    async with httpx.AsyncClient() as client:
+        response = await client.post(
+            "http://127.0.0.1:11434/api/chat",
+            json={
+                "model": "gemma:2b",
+                "messages": [{"role": "user", "content": msg.message}],
+                "stream": False
+            }
+        )
+        response.raise_for_status()
+        data = response.json()
+        return {"response": data["message"]["content"]}
 
 @app.get("/health")
 async def health_check():
