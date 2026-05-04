@@ -24,6 +24,18 @@ npm-debug.log*
 old.pdf
 cover-letter.pdf
 
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+*.egg
+.pytest_cache/
+.coverage
+htmlcov/
+
 # input files
 job-spec/
 
