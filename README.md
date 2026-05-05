@@ -19,7 +19,7 @@ The repository includes a scaffolded DocFX documentation site (located in `proje
    ```
 2. Install dependencies:
    ```bash
-   pnpm install
+   pnpm -w install
    ```
 3. Start the local development server:
    ```bash

@@ -3,6 +3,7 @@ import re
 import hashlib
 import httpx
 
+from pathlib import Path
 from qdrant_client import QdrantClient
 from qdrant_client.http.models import (
     VectorParams,
@@ -14,6 +15,7 @@ from qdrant_client.http.models import (
 
 
 DOCS_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
 COLLECTION_NAME = "docfx-docs"
 QDRANT_URL = "http://localhost:6333"
 OLLAMA_URL = "http://127.0.0.1:11434"
@@ -49,11 +51,15 @@ def chunk_by_headers(markdown_text: str, source_file: str):
         parent_headers = [h["title"] for h in heading_stack[:-1]]
         section_path = " > ".join([h["title"] for h in heading_stack]) or current_header
 
+        path = Path(source_file)
+        if path.parts and path.parts[0] == "docfx-site":
+            qdrant_source_file = str(Path(*path.parts[1:])).replace("\\", "/")
+
         chunks.append({
             "text": text,
             "header": current_header,
             "level": current_level,
-            "source": source_file,
+            "source": qdrant_source_file,
             "parent_headers": parent_headers,
             "section_path": section_path,
         })

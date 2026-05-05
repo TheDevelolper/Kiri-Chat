@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "dev": "concurrently  \"pnpm run rag:setup\" \"docfx docfx.json --serve\" \"python -m uvicorn main:app --reload --host 127.0.0.1 --port 8000 --app-dir chat-api\"",
+    "dev": "concurrently  \"pnpm run rag:setup\" \"docfx docfx-site/docfx.json --serve\" \"python -m uvicorn main:app --reload --host 127.0.0.1 --port 8000 --app-dir chat-api\"",
     "postinstall": "pip install -r chat-api/requirements.txt",
     "rag:qdrant:up": "podman compose up -d qdrant",
     "rag:qdrant:down": "podman compose down",

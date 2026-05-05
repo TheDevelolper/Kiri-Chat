@@ -1,6 +1,6 @@
 packages:
   - 'astro-site'
-  - 'projects/docfx-rag/docfx-site'
+  - 'projects/docfx-rag'
 
 onlyBuiltDependencies:
   - esbuild

@@ -42,4 +42,4 @@ job-spec/
 package-lock.json
 
 _site
-projects/docfx-rag/docfx-site/qdrant_storage/
+projects/docfx-rag/qdrant_storage/

@@ -12,6 +12,8 @@ importers:
         specifier: ^9.2.1
         version: 9.2.1
 
+  projects/docfx-rag: {}
+
 packages:
 
   ansi-regex@5.0.1:
