@@ -3,6 +3,9 @@
 ## Introduction
 Kiri-Chat is a project combining [DocFX](https://dotnet.github.io/docfx/) — a .NET static site generator for technical documentation — with Retrieval-Augmented Generation (RAG) to enable AI-powered question answering over documentation content.
 
+Here's what it looks like!
+![screenshot](screenshot.png)
+
 The repository includes a scaffolded DocFX documentation site (located in `projects/docfx-rag/docfx-site`) with core configuration in place, ready for content population and RAG feature development.
 
 ## Getting Started
