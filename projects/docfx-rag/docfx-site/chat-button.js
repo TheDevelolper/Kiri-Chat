@@ -65,7 +65,7 @@ class ChatButton extends HTMLElement {
           position: absolute;
           bottom: 80px;
           right: 0;
-          width: 350px;
+          width: 450px;
           height: 500px;
           background: white;
           border-radius: 12px;
@@ -139,6 +139,7 @@ class ChatButton extends HTMLElement {
           padding: 8px 12px;
           border-radius: 8px;
           max-width: 80%;
+          font-size: 0.8rem;
         }
 
         .message.user {
@@ -165,7 +166,7 @@ class ChatButton extends HTMLElement {
           background: #f0f0f0;
           padding: 2px 4px;
           border-radius: 3px;
-          font-size: 0.9em;
+          font-size: 0.8rem;
         }
 
         .message.bot pre {
@@ -219,7 +220,7 @@ class ChatButton extends HTMLElement {
           margin-top: 8px;
           padding-top: 8px;
           border-top: 1px solid #e0e0e0;
-          font-size: 0.85em;
+          font-size: 0.8rem;
         }
 
         .message-sources a {
@@ -231,7 +232,7 @@ class ChatButton extends HTMLElement {
           padding: 2px 8px;
           background: #f0f0f0;
           border-radius: 12px;
-          font-size: 0.9em;
+          font-size: 0.8rem;
         }
 
         .message-sources a:hover {
@@ -241,7 +242,7 @@ class ChatButton extends HTMLElement {
         .sources-label {
           color: #666;
           margin-bottom: 4px;
-          font-size: 0.9em;
+          font-size: 0.8rem;
         }
 
         .chat-input {
