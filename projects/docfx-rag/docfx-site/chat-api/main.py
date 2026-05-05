@@ -1,9 +1,8 @@
 from fastapi import FastAPI, HTTPException
-
-
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import httpx
+import re
 from qdrant_client import QdrantClient
 from qdrant_client.http.models import Filter, FieldCondition, MatchTextAny
 
@@ -58,35 +57,54 @@ async def chat_endpoint(msg: Message):
             )
 
             # 2b. Keyword search against payload text/header
+
+            # We could improve this later by using an LLM to extract better keywords or key phrases, but for now we'll do a simple regex-based extraction and filtering of stop words.
+            # Need to keep this lightweight since it's run on every query and we don't want to add latency.
+
+            # Tokenize message into keywords (filter out stop words and short words)
+            stop_words = {"the", "a", "an", "is", "are", "was", "were", "be", "been", "being",
+                         "have", "has", "had", "do", "does", "did", "will", "would", "could",
+                         "should", "may", "might", "must", "shall", "can", "need", "dare",
+                         "tell", "me", "about", "what", "where", "when", "why", "how",
+                         "i", "you", "he", "she", "it", "we", "they", "my", "your", "his",
+                         "her", "its", "our", "their", "this", "that", "these", "those",
+                         "and", "or", "but", "not", "if", "then", "else", "for", "of", "to",
+                         "in", "on", "at", "by", "from", "with", "about"}
+            
+            keywords = " ".join([word.lower() for word in re.findall(r'\b\w+\b', msg.message) 
+                       if word.lower() not in stop_words and len(word) > 2])
+            print(f"Extracted keywords: {keywords}")
             keyword_points, _ = qdrant.scroll(
                 collection_name=COLLECTION_NAME,
                 scroll_filter=Filter(
                     should=[
                         FieldCondition(
                             key="text",
-                            match=MatchTextAny(text_any=msg.message),
+                            match=MatchTextAny(text_any=keywords),
                         ),
                         FieldCondition(
                             key="header",
-                            match=MatchTextAny(text_any=msg.message),
+                            match=MatchTextAny(text_any=keywords),
                         ),
                     ]
                 ),
-                limit=5,
+                limit=2,
                 with_payload=True,
                 with_vectors=False,
             )
 
-            # 2c. Merge results by point ID
+            # 2c. Merge results by point ID (keyword first to prioritize correct doc_urls)
             points_by_id = {}
 
-            for hit in semantic_result.points:
-                points_by_id[hit.id] = hit
+            # First add the strong keyword results
+            for point in keyword_points[:2]:
+                points_by_id[point.id] = point
 
-            for point in keyword_points:
-                if point.id not in points_by_id:
-                    points_by_id[point.id] = point
-
+            # Only add semantic results if keyword search found nothing
+            if not points_by_id:
+                for hit in semantic_result.points[:5]:
+                    points_by_id[hit.id] = hit
+        
             # 2d. Build context
             chunks = []
 
@@ -144,8 +162,23 @@ async def chat_endpoint(msg: Message):
             response.raise_for_status()
 
             data = response.json()
+     
+            # Build unique source links
+            source_links = {}
+            for point in points_by_id.values():
+                payload = point.payload or {}
+                source = payload.get("source")
+                doc_url = payload.get("doc_url")
+                header = payload.get("header", "Untitled")
+                if source and doc_url and source not in source_links:
+                    source_links[source] = {"url": doc_url, "header": header}
+
             return {
     "response": data["message"]["content"],
+    "sources": [
+        {"url": info["url"], "header": info["header"], "source": source}
+        for source, info in source_links.items()
+    ],
     "debug": {
         "message": msg.message,
         "semantic_results_count": len(semantic_result.points),
@@ -157,6 +190,7 @@ async def chat_endpoint(msg: Message):
                 "id": point.id,
                 "score": getattr(point, "score", None),
                 "source": (point.payload or {}).get("source"),
+                "doc_url": (point.payload or {}).get("doc_url"),
                 "header": (point.payload or {}).get("header"),
                 "level": (point.payload or {}).get("level"),
                 "preview": (point.payload or {}).get("text", "")[:300],

@@ -139,11 +139,47 @@ Current section: {chunk["header"]}
 """.strip()
 
 
+def generate_anchor(header: str) -> str:
+    """Generate a docfx-compatible anchor from a header string."""
+    # Convert to lowercase
+    anchor = header.lower()
+    # Remove special characters (keep only alphanumeric and spaces)
+    anchor = re.sub(r'[^a-z0-9\s]', '', anchor)
+    # Replace spaces with hyphens
+    anchor = re.sub(r'\s+', '-', anchor)
+    # Remove multiple consecutive hyphens
+    anchor = re.sub(r'-+', '-', anchor)
+    # Strip leading/trailing hyphens
+    anchor = anchor.strip('-')
+    return anchor
+
+
+def doc_url_from_source(source: str, header: str = "") -> str:
+    """Convert a markdown source path to a docfx documentation URL with anchor."""
+    base_url = "http://localhost:8080"
+
+    # Docfx treats README.md as index.html
+    if source == "README.md":
+        html_path = "index.html"
+    else:
+        html_path = source.replace(".md", ".html")
+
+    url = f"{base_url}/{html_path}"
+
+    if header:
+        anchor = generate_anchor(header)
+        if anchor:
+            url += f"#{anchor}"
+
+    return url
+
+
 def payload_for_chunk(chunk: dict, chunk_index: int) -> dict:
     return {
         "text": chunk["text"],
         "header": chunk["header"],
         "source": chunk["source"],
+        "doc_url": doc_url_from_source(chunk["source"], chunk["header"]),
         "level": chunk["level"],
         "parent_headers": chunk["parent_headers"],
         "section_path": chunk["section_path"],
@@ -152,9 +188,13 @@ def payload_for_chunk(chunk: dict, chunk_index: int) -> dict:
 
 
 def recreate_collection(client: QdrantClient):
+    # Delete entire collection if it exists for a fresh start
     if client.collection_exists(COLLECTION_NAME):
+        print(f"Deleting existing collection '{COLLECTION_NAME}'...")
         client.delete_collection(COLLECTION_NAME)
+        print(f"Collection '{COLLECTION_NAME}' deleted.")
 
+    print(f"Creating new collection '{COLLECTION_NAME}'...")
     client.create_collection(
         collection_name=COLLECTION_NAME,
         vectors_config=VectorParams(
@@ -163,6 +203,7 @@ def recreate_collection(client: QdrantClient):
         ),
     )
 
+    print("Creating payload indexes...")
     client.create_payload_index(
         collection_name=COLLECTION_NAME,
         field_name="text",
@@ -198,6 +239,7 @@ def recreate_collection(client: QdrantClient):
             lowercase=True,
         ),
     )
+    print("Payload indexes created.")
 
 
 def main():

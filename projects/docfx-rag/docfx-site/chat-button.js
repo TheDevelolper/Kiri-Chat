@@ -166,6 +166,35 @@ class ChatButton extends HTMLElement {
           text-decoration: underline;
         }
 
+        .message-sources {
+          margin-top: 8px;
+          padding-top: 8px;
+          border-top: 1px solid #e0e0e0;
+          font-size: 0.85em;
+        }
+
+        .message-sources a {
+          color: #0078d4;
+          text-decoration: none;
+          display: inline-block;
+          margin-right: 8px;
+          margin-bottom: 4px;
+          padding: 2px 8px;
+          background: #f0f0f0;
+          border-radius: 12px;
+          font-size: 0.9em;
+        }
+
+        .message-sources a:hover {
+          background: #e0e0e0;
+        }
+
+        .sources-label {
+          color: #666;
+          margin-bottom: 4px;
+          font-size: 0.9em;
+        }
+
         .chat-input {
           display: flex;
           padding: 12px;
@@ -292,10 +321,26 @@ class ChatButton extends HTMLElement {
       });
 
       const data = await response.json();
-
       const botMessage = document.createElement('div');
       botMessage.className = 'message bot';
       botMessage.innerHTML = marked.parse(data.response || '');
+
+      // Add source links if available
+      if (data.sources && data.sources.length > 0) {
+        const sourcesDiv = document.createElement('div');
+        sourcesDiv.className = 'message-sources';
+        sourcesDiv.innerHTML = '<div class="sources-label">Sources:</div>';
+        data.sources.forEach(source => {
+          const link = document.createElement('a');
+          link.href = source.url;
+          link.target = '_blank';
+          link.rel = 'noopener noreferrer';
+          link.textContent = source.header || source.source;
+          sourcesDiv.appendChild(link);
+        });
+        botMessage.appendChild(sourcesDiv);
+      }
+
       chatMessages.appendChild(botMessage);
     } catch (error) {
       const errorMessage = document.createElement('div');
