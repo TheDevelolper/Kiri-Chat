@@ -69,7 +69,7 @@ The Kiri Chat docfx site will be available at `http://localhost:8080` and the ch
 ### 1. Indexing (`chat-api/index_docs.py`)
 - Recursively finds all `.md` files in the project (excludes `_site/`, `qdrant_storage/`)
 - Chunks documents by markdown headers (`#`, `##`, `###`)
-- Generates embeddings using Ollama `nomic-embed-text` (768 dimensions)
+- Generates embeddings using Ollama `nomic-embed-text` (384 dimensions)
 - Stores vectors in Qdrant collection `docfx-docs`
 
 ### 2. Kiri Chat RAG (`chat-api/main.py`)

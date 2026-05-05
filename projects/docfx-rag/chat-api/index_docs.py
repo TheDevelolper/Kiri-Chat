@@ -19,8 +19,8 @@ DOCS_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 COLLECTION_NAME = "docfx-docs"
 QDRANT_URL = "http://localhost:6333"
 OLLAMA_URL = "http://127.0.0.1:11434"
-EMBED_MODEL = "nomic-embed-text"
-EMBED_DIM = 768
+EMBED_MODEL = "all-minilm"
+EMBED_DIM = 384
 
 
 def stable_point_id(source: str, chunk_index: int) -> int:

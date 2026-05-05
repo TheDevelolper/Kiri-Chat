@@ -1,15 +1,16 @@
+import httpx
+import re
+
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-import httpx
-import re
 from qdrant_client import QdrantClient
 from qdrant_client.http.models import Filter, FieldCondition, MatchTextAny
 
 QDRANT_URL = "http://localhost:6333"
 COLLECTION_NAME = "docfx-docs"
 OLLAMA_URL = "http://127.0.0.1:11434"
-EMBED_MODEL = "nomic-embed-text"
+EMBED_MODEL = "all-minilm"
 MODEL = "gemma:2b"
 
 app = FastAPI(title="Chat API")
