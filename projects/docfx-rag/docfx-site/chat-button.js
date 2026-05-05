@@ -388,10 +388,9 @@ class ChatButton extends HTMLElement {
           const sourcesDiv = document.createElement('div');
           sourcesDiv.className = 'message-sources';
           sourcesDiv.innerHTML = '<div class="sources-label">Sources:</div>';
-          msg.sources.forEach(source => {
+        msg.sources.forEach(source => {
             const link = document.createElement('a');
             link.href = source.url;
-            link.rel = 'noopener noreferrer';
             link.textContent = source.text;
             sourcesDiv.appendChild(link);
           });
@@ -476,7 +475,6 @@ class ChatButton extends HTMLElement {
         data.sources.forEach(source => {
           const link = document.createElement('a');
           link.href = source.url;
-          link.rel = 'noopener noreferrer';
           link.textContent = source.header || source.source;
           sourcesDiv.appendChild(link);
         });

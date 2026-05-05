@@ -1,12 +1,12 @@
 # Getting Started
 
-Set up **Kiri Chat** — a local RAG-powered documentation assistant using [docfx](https://dotnet.github.io/docfx/), **Qdrant** vector database, and **Ollama** local LLM.
+Set up **Kiri Chat** — a RAG-powered chatbot that uses your documentation as a knowledge base, built with [docfx](https://dotnet.github.io/docfx/), **Qdrant** vector database, and **Ollama** local LLM.
 
 ## What is this project?
 
 **Kiri Chat** is a RAG (Retrieval-Augmented Generation) system that transforms static markdown documentation into an interactive chat experience. Instead of traditional keyword search, users ask natural language questions and receive accurate, contextual answers sourced directly from the documentation.
 
-This project uses docfx to generate the documentation site, but the core functionality is the chat system that lets users interact with their docs through AI.
+This project uses docfx to generate the documentation site, but the core functionality is the chat system that lets users have conversations with an AI assistant that only answers based on your documentation content.
 
 ## Features
 

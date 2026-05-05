@@ -1,6 +1,6 @@
 # Chat Window
 
-**Part of Kiri Chat** — a floating, embeddable chat widget that lets users ask questions about the documentation using the RAG backend.
+**Part of Kiri Chat** — a floating, embeddable chat widget that lets users have conversations with an AI assistant powered by your documentation.
 
 ## What is this component?
 

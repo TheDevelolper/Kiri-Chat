@@ -1,29 +1,15 @@
 # Kiri Chat
 
-Welcome to **Kiri Chat** — a local, privacy-first documentation assistant powered by Retrieval-Augmented Generation (RAG).
+Welcome to **Kiri Chat** — a chatbot system that uses your documentation as a knowledge base, powered by Retrieval-Augmented Generation (RAG).
 
-## What is Kiri Chat?
+Kiri Chat lets you have natural conversations with an AI assistant about your documentation. It uses a Large Language Model (LLM) to answer questions, but only draws information from the documentation you've indexed — ensuring accurate, contextual responses.
 
-Kiri Chat is a project that combines documentation generation with AI-powered question answering. This project transforms static markdown documentation into an interactive, searchable knowledge base with a conversational chat interface.
+The system is built with:
 
-**In simple terms:** Kiri Chat is a RAG (Retrieval-Augmented Generation) system that lets you chat with your documentation. Instead of searching through pages manually, you ask questions in natural language and get accurate answers sourced directly from your docs.
-
-## What Does This Project Do?
-
-- **Indexes documentation** — markdown files are processed, chunked by headers, and stored as vector embeddings
-- **Understands questions** — uses semantic search to find the most relevant documentation sections for your query
-- **Generates answers** — a local LLM creates responses based *only* on the retrieved documentation context
-- **Cites sources** — every answer includes links back to the exact documentation sections used
-
-## Technology Stack
-
-Kiri Chat is built with:
-
-- **docfx** — static documentation site generator that builds the HTML site from markdown
-- **Qdrant** — high-performance vector database for storing and searching embeddings
-- **Ollama** — local LLM and embedding models (no data leaves your machine)
-- **FastAPI** — lightweight chat API backend that orchestrates the RAG pipeline
-- **Web Components** — `<chat-button>` custom element for embedding the chat widget on any page
+- **docfx** — static documentation site generator
+- **Qdrant** — high-performance vector database for semantic search
+- **Ollama** — local LLM and embedding models
+- **FastAPI** — lightweight chat API backend
 
 ## Why Kiri Chat?
 
@@ -31,11 +17,12 @@ Traditional documentation search relies on keyword matching, which often misses 
 
 ## Key Features
 
-- **Local-first** — runs entirely on your machine, no external APIs
+- **Documentation-powered** — answers are generated only from your indexed documentation
 - **Source attribution** — every answer links to the documentation sections used
 - **Markdown-aware** — responses preserve formatting, code blocks, and lists
 - **Embeddable chat widget** — floating `<chat-button>` web component for any page
 - **Header-based chunking** — document structure is preserved for better context
+- **Local processing** — runs on your machine using Ollama for embeddings and LLM inference
 
 ## How It Works
 

@@ -8,11 +8,11 @@ _layout: landing
 
 ## What is Kiri Chat?
 
-Kiri Chat is a project that combines a documentation site generator (docfx) with AI-powered question answering. Instead of manually searching through documentation pages, users can ask questions in natural language and receive accurate, contextual answers.
+Kiri Chat is a chatbot system that uses a Large Language Model (LLM) to answer questions about your documentation. It treats your documentation as a knowledge base, allowing users to have natural conversations with an AI assistant that only answers based on the content available in your docs.
 
-**Key point:** This project is called **Kiri Chat** — a local, privacy-first documentation assistant.
+**Key point:** This project is called **Kiri Chat** — a documentation-powered chatbot.
 
-Kiri Chat is a privacy-first, locally hosted chatbot that answers questions about your documentation using Retrieval-Augmented Generation. Ask natural language questions and get accurate answers grounded in your docs — with source links back to the exact sections used.
+Kiri Chat runs locally using Ollama, meaning all processing happens on your machine. Ask natural language questions and get accurate answers grounded in your docs — with source links back to the exact sections used.
 
 ## Features
 
