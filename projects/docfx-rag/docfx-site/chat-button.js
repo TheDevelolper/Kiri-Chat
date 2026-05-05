@@ -4,11 +4,15 @@ class ChatButton extends HTMLElement {
     this.attachShadow({ mode: 'open' });
     this.isOpen = true;
     this.markedLoaded = false;
+    this.storageKey = 'kiri-chat-history';
+    this.openStateKey = 'kiri-chat-open';
   }
 
   connectedCallback() {
     this.render();
     this.setupEventListeners();
+    this.loadChatState();
+    this.loadHistory();
   }
 
   render() {
@@ -86,6 +90,27 @@ class ChatButton extends HTMLElement {
         .chat-header h3 {
           margin: 0;
           font-size: 16px;
+        }
+
+        .header-buttons {
+          display: flex;
+          gap: 8px;
+          align-items: center;
+        }
+
+        .clear-btn {
+          background: none;
+          border: 1px solid rgba(255, 255, 255, 0.5);
+          color: white;
+          cursor: pointer;
+          font-size: 11px;
+          padding: 2px 8px;
+          border-radius: 10px;
+          transition: background 0.2s;
+        }
+
+        .clear-btn:hover {
+          background: rgba(255, 255, 255, 0.2);
         }
 
         .close-btn {
@@ -251,7 +276,10 @@ class ChatButton extends HTMLElement {
       <div class="chat-window open" id="chatWindow">
         <div class="chat-header">
           <h3>Chat with Kiri</h3>
-          <button class="close-btn" id="closeBtn">×</button>
+          <div class="header-buttons">
+            <button class="clear-btn" id="clearBtn">Clear</button>
+            <button class="close-btn" id="closeBtn">×</button>
+          </div>
         </div>
         <div class="chat-messages" id="chatMessages">
           <div class="message bot">Hello! How can I help you today?</div>
@@ -272,6 +300,7 @@ class ChatButton extends HTMLElement {
   setupEventListeners() {
     const chatButton = this.shadowRoot.querySelector('#chatButton');
     const closeBtn = this.shadowRoot.querySelector('#closeBtn');
+    const clearBtn = this.shadowRoot.querySelector('#clearBtn');
     const sendBtn = this.shadowRoot.querySelector('#sendBtn');
     const messageInput = this.shadowRoot.querySelector('#messageInput');
     const chatWindow = this.shadowRoot.querySelector('#chatWindow');
@@ -282,6 +311,10 @@ class ChatButton extends HTMLElement {
 
     closeBtn.addEventListener('click', () => {
       this.toggleChat();
+    });
+
+    clearBtn.addEventListener('click', () => {
+      this.clearHistory();
     });
 
     sendBtn.addEventListener('click', () => {
@@ -300,6 +333,80 @@ class ChatButton extends HTMLElement {
     this.isOpen = !this.isOpen;
     chatWindow.classList.toggle('open', this.isOpen);
     this.classList.toggle('chat-open', this.isOpen);
+    sessionStorage.setItem(this.openStateKey, this.isOpen ? 'true' : 'false');
+  }
+
+  loadChatState() {
+    const savedState = sessionStorage.getItem(this.openStateKey);
+    if (savedState === 'true') {
+      this.isOpen = true;
+      const chatWindow = this.shadowRoot.querySelector('#chatWindow');
+      chatWindow.classList.add('open');
+      this.classList.add('chat-open');
+    }
+  }
+
+  saveHistory() {
+    const chatMessages = this.shadowRoot.querySelector('#chatMessages');
+    const messages = [];
+    chatMessages.querySelectorAll('.message').forEach(msg => {
+      const isUser = msg.classList.contains('user');
+      const isBot = msg.classList.contains('bot');
+      const isLoading = msg.classList.contains('loading');
+      if (isLoading) return;
+      if (isUser) {
+        messages.push({ type: 'user', text: msg.textContent });
+      } else if (isBot) {
+        const sources = [];
+        const sourceLinks = msg.querySelectorAll('.message-sources a');
+        sourceLinks.forEach(link => {
+          sources.push({ url: link.href, text: link.textContent });
+        });
+        messages.push({ type: 'bot', html: msg.innerHTML.split('<div class="message-sources">')[0], sources });
+      }
+    });
+    sessionStorage.setItem(this.storageKey, JSON.stringify(messages));
+  }
+
+  loadHistory() {
+    const savedHistory = sessionStorage.getItem(this.storageKey);
+    if (!savedHistory) return;
+    const messages = JSON.parse(savedHistory);
+    const chatMessages = this.shadowRoot.querySelector('#chatMessages');
+    chatMessages.innerHTML = '';
+    messages.forEach(msg => {
+      if (msg.type === 'user') {
+        const userMessage = document.createElement('div');
+        userMessage.className = 'message user';
+        userMessage.textContent = msg.text;
+        chatMessages.appendChild(userMessage);
+      } else if (msg.type === 'bot') {
+        const botMessage = document.createElement('div');
+        botMessage.className = 'message bot';
+        botMessage.innerHTML = msg.html;
+        if (msg.sources && msg.sources.length > 0) {
+          const sourcesDiv = document.createElement('div');
+          sourcesDiv.className = 'message-sources';
+          sourcesDiv.innerHTML = '<div class="sources-label">Sources:</div>';
+          msg.sources.forEach(source => {
+            const link = document.createElement('a');
+            link.href = source.url;
+            link.rel = 'noopener noreferrer';
+            link.textContent = source.text;
+            sourcesDiv.appendChild(link);
+          });
+          botMessage.appendChild(sourcesDiv);
+        }
+        chatMessages.appendChild(botMessage);
+      }
+    });
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+  }
+
+  clearHistory() {
+    sessionStorage.removeItem(this.storageKey);
+    const chatMessages = this.shadowRoot.querySelector('#chatMessages');
+    chatMessages.innerHTML = '<div class="message bot">Hello! How can I help you today?</div>';
   }
 
   async loadMarked() {
@@ -335,6 +442,7 @@ class ChatButton extends HTMLElement {
 
     messageInput.value = '';
     chatMessages.scrollTop = chatMessages.scrollHeight;
+    this.saveHistory();
 
     // Show loading spinner
     const loadingMessage = document.createElement('div');
@@ -368,7 +476,6 @@ class ChatButton extends HTMLElement {
         data.sources.forEach(source => {
           const link = document.createElement('a');
           link.href = source.url;
-          link.target = '_blank';
           link.rel = 'noopener noreferrer';
           link.textContent = source.header || source.source;
           sourcesDiv.appendChild(link);
@@ -377,6 +484,7 @@ class ChatButton extends HTMLElement {
       }
 
       chatMessages.appendChild(botMessage);
+      this.saveHistory();
     } catch (error) {
       // Remove loading spinner
       loadingMessage.remove();
@@ -385,6 +493,7 @@ class ChatButton extends HTMLElement {
       errorMessage.className = 'message bot';
       errorMessage.textContent = 'Error: Could not reach the chat API.';
       chatMessages.appendChild(errorMessage);
+      this.saveHistory();
     }
 
     chatMessages.scrollTop = chatMessages.scrollHeight;

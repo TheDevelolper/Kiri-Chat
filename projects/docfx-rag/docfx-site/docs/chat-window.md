@@ -149,6 +149,5 @@ To control placement, add the element directly in your HTML:
 
 - The `marked` library is loaded on-demand (first message) to avoid blocking page load
 - The chat window opens at 350×500px and floats above all other content (`z-index: 9999`)
-- Source links open in a new tab (`target="_blank"`)
 - The input field is automatically cleared after sending
 - If the API is unreachable, an error message is displayed in the chat window
