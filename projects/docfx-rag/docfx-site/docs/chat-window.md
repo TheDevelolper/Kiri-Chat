@@ -1,6 +1,10 @@
 # Chat Window
 
-A floating, embeddable chat widget that lets users ask questions about the documentation using the RAG backend.
+**Part of Kiri Chat** — a floating, embeddable chat widget that lets users ask questions about the documentation using the RAG backend.
+
+## What is this component?
+
+The chat window is the user-facing interface of **Kiri Chat**. It's a web component (`<chat-button>`) that provides a floating chat button on every page, allowing users to ask natural language questions about the documentation and receive AI-generated answers with source attribution.
 
 ## Features
 

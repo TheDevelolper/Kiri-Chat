@@ -2,7 +2,7 @@ class ChatButton extends HTMLElement {
   constructor() {
     super();
     this.attachShadow({ mode: 'open' });
-    this.isOpen = false;
+    this.isOpen = true;
     this.markedLoaded = false;
   }
 
@@ -248,7 +248,7 @@ class ChatButton extends HTMLElement {
           background: #006cbd;
         }
       </style>
-      <div class="chat-window" id="chatWindow">
+      <div class="chat-window open" id="chatWindow">
         <div class="chat-header">
           <h3>Chat with Kiri</h3>
           <button class="close-btn" id="closeBtn">×</button>
@@ -257,7 +257,7 @@ class ChatButton extends HTMLElement {
           <div class="message bot">Hello! How can I help you today?</div>
         </div>
         <div class="chat-input">
-          <input type="text" id="messageInput" placeholder="Type a message..." value="Tell me about the Prerequisites" />
+          <input type="text" id="messageInput" placeholder="Type a message..." value="What is this project?" />
           <button id="sendBtn">Send</button>
         </div>
       </div>
