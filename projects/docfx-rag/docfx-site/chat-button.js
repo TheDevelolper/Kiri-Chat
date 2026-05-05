@@ -166,6 +166,30 @@ class ChatButton extends HTMLElement {
           text-decoration: underline;
         }
 
+        .message.loading {
+          background: transparent;
+          border: none;
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          padding: 8px 12px;
+          color: #666;
+        }
+
+        .spinner {
+          width: 16px;
+          height: 16px;
+          border: 2px solid #e0e0e0;
+          border-top: 2px solid #0078d4;
+          border-radius: 50%;
+          animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+
         .message-sources {
           margin-top: 8px;
           padding-top: 8px;
@@ -312,6 +336,13 @@ class ChatButton extends HTMLElement {
     messageInput.value = '';
     chatMessages.scrollTop = chatMessages.scrollHeight;
 
+    // Show loading spinner
+    const loadingMessage = document.createElement('div');
+    loadingMessage.className = 'message loading';
+    loadingMessage.innerHTML = '<div class="spinner"></div><span>Thinking...</span>';
+    chatMessages.appendChild(loadingMessage);
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+
     try {
       await this.loadMarked();
       const response = await fetch('http://localhost:8000/chat', {
@@ -321,6 +352,10 @@ class ChatButton extends HTMLElement {
       });
 
       const data = await response.json();
+
+      // Remove loading spinner
+      loadingMessage.remove();
+
       const botMessage = document.createElement('div');
       botMessage.className = 'message bot';
       botMessage.innerHTML = marked.parse(data.response || '');
@@ -343,6 +378,9 @@ class ChatButton extends HTMLElement {
 
       chatMessages.appendChild(botMessage);
     } catch (error) {
+      // Remove loading spinner
+      loadingMessage.remove();
+
       const errorMessage = document.createElement('div');
       errorMessage.className = 'message bot';
       errorMessage.textContent = 'Error: Could not reach the chat API.';
