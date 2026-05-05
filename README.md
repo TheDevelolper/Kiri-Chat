@@ -1,5 +1,7 @@
 # Kiri-Chat
 
+[Try the Interactive Demo](https://hirekiran.com/kiri-chat/)
+
 ## Introduction
 Kiri-Chat is a project combining [DocFX](https://dotnet.github.io/docfx/) — a .NET static site generator for technical documentation — with Retrieval-Augmented Generation (RAG) to enable AI-powered question answering over documentation content.
 
