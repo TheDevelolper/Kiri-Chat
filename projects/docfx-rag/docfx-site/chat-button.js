@@ -33,6 +33,43 @@ class ChatButton extends HTMLElement {
           height: 540px;
         }
 
+        @media (max-width: 480px) {
+          :host {
+            bottom: 0;
+            right: 0;
+            left: 0;
+            width: 80%;
+            height: 60px;
+          }
+
+          :host(.chat-open) {
+            width: 100%;
+            height: 100%;
+            bottom: 0;
+            right: 0;
+          }
+
+          .chat-window {
+            bottom: 60px;
+            right: 0;
+            left: 0;
+            width: 100%;
+            height: calc(100% - 60px);
+            border-radius: 0;
+          }
+
+          .chat-button {
+            width: 100%;
+            height: 60px;
+            border-radius: 0;
+            box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.15);
+          }
+
+          .chat-header {
+            border-radius: 0;
+          }
+        }
+
         .chat-button {
           width: 60px;
           height: 60px;
@@ -66,7 +103,8 @@ class ChatButton extends HTMLElement {
           position: absolute;
           bottom: 80px;
           right: 0;
-          width: 450px;
+          width: 100vw
+          max-width: 440px;
           height: 500px;
           background: white;
           border-radius: 12px;
