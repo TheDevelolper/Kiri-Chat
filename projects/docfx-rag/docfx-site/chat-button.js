@@ -415,13 +415,14 @@ class ChatButton extends HTMLElement {
     `;
   }
 
-  setupEventListeners() {
+   setupEventListeners() {
     const chatButton = this.shadowRoot.querySelector('#chatButton');
     const closeBtn = this.shadowRoot.querySelector('#closeBtn');
     const clearBtn = this.shadowRoot.querySelector('#clearBtn');
     const sendBtn = this.shadowRoot.querySelector('#sendBtn');
     const messageInput = this.shadowRoot.querySelector('#messageInput');
     const chatWindow = this.shadowRoot.querySelector('#chatWindow');
+    const chatMessages = this.shadowRoot.querySelector('#chatMessages');
 
     chatButton.addEventListener('click', () => {
       this.toggleChat();
@@ -442,6 +443,13 @@ class ChatButton extends HTMLElement {
     messageInput.addEventListener('keypress', (e) => {
       if (e.key === 'Enter') {
         this.sendMessage();
+      }
+    });
+
+    chatMessages.addEventListener('click', (e) => {
+      const link = e.target.closest('a');
+      if (link && window.innerWidth <= 480) {
+        this.toggleChat(false);
       }
     });
   }
@@ -520,11 +528,6 @@ class ChatButton extends HTMLElement {
             const link = document.createElement('a');
             link.href = source.url;
             link.textContent = source.text;
-            link.addEventListener('click', () => {
-              if (window.innerWidth <= 480) {
-                this.toggleChat(false);
-              }
-            });
             sourcesDiv.appendChild(link);
           });
           botMessage.appendChild(sourcesDiv);
@@ -698,11 +701,6 @@ class ChatButton extends HTMLElement {
            const link = document.createElement('a');
            link.href = source.url;
            link.textContent = source.header || source.source;
-           link.addEventListener('click', () => {
-             if (window.innerWidth <= 480) {
-               this.toggleChat(false);
-             }
-           });
            sourcesDiv.appendChild(link);
          });
          botMessage.appendChild(sourcesDiv);
