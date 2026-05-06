@@ -465,7 +465,7 @@ class ChatButton extends HTMLElement {
     // Show loading spinner
     const loadingMessage = document.createElement('div');
     loadingMessage.className = 'message loading';
-    loadingMessage.innerHTML = '<div class="spinner"></div><span>Thinking...</span>';
+    loadingMessage.innerHTML = '<div class="spinner"></div><span>Big thoughts, tiny machine.. hold up...</span>';
     chatMessages.appendChild(loadingMessage);
     chatMessages.scrollTop = chatMessages.scrollHeight;
 
@@ -477,15 +477,11 @@ class ChatButton extends HTMLElement {
       botMessage.className = 'message bot';
       botMessage.innerHTML = '';
       
-      // Remove loading spinner and add bot message
-      loadingMessage.remove();
-      chatMessages.appendChild(botMessage);
-      
       let fullResponse = '';
       let sources = [];
 
       // Use fetch with streaming
-      const response = await fetch('http://localhost:8000/chat', {
+      const response = await fetch('https://chat.hirekiran.com/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ message: text })
@@ -510,14 +506,22 @@ class ChatButton extends HTMLElement {
         for (const line of lines) {
           if (line.startsWith('data: ')) {
             const dataStr = line.slice(6).trim();
-            if (dataStr === '[DONE]') continue;
+            if (dataStr === '[DONE]') {
+              continue;
+            };
             
             try {
               const data = JSON.parse(dataStr);
               if (data.token) {
-                fullResponse += data.token;
-                botMessage.innerHTML = marked.parse(fullResponse);
-                chatMessages.scrollTop = chatMessages.scrollHeight;
+                  fullResponse += data.token;
+
+                  // Remove loading message on first response
+                  if (fullResponse?.length > 0) {
+                      chatMessages.appendChild(botMessage);
+                      loadingMessage.remove();
+                  }
+                  botMessage.innerHTML = marked.parse(fullResponse);
+                  chatMessages.scrollTop = chatMessages.scrollHeight;
               }
               if (data.sources) {
                 sources = data.sources;
@@ -546,6 +550,26 @@ class ChatButton extends HTMLElement {
         });
         botMessage.appendChild(sourcesDiv);
       }
+
+
+      const readButton = document.createElement('button');
+      readButton.textContent = 'Read Aloud';
+
+      let utterance;
+      readButton.addEventListener('click', () => {
+
+        if(utterance && speechSynthesis.speaking) {
+            speechSynthesis.cancel();
+            readButton.textContent = 'Read Aloud';
+        } else {
+            readButton.textContent = 'Stop Reading';
+            utterance = new SpeechSynthesisUtterance(botMessage.textContent);
+            speechSynthesis.speak(utterance);
+        }
+    
+      });
+
+      botMessage.appendChild(readButton);
 
       this.saveHistory();
     } catch (error) {
