@@ -204,7 +204,7 @@ class ChatButton extends HTMLElement {
 
         .read-aloud-btn {
           position: absolute;
-          top: 8px;
+          bottom: 8px;
           right: 8px;
           background: transparent;
           border: none;
