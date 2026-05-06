@@ -16,6 +16,13 @@ class ChatButton extends HTMLElement {
     this.loadHistory();
   }
 
+  connectedCallback() {
+    this.render();
+    this.setupEventListeners();
+    this.loadChatState();
+    this.loadHistory();
+  }
+
   render() {
     this.shadowRoot.innerHTML = `
       <style>
@@ -384,7 +391,7 @@ class ChatButton extends HTMLElement {
           height: 16px;
         }
       </style>
-      <div class="chat-window open" id="chatWindow">
+       <div class="chat-window" id="chatWindow">
         <div class="chat-header">
           <h3>Chat with Kiri</h3>
           <div class="header-buttons">
@@ -444,16 +451,24 @@ class ChatButton extends HTMLElement {
     this.isOpen = !this.isOpen;
     chatWindow.classList.toggle('open', this.isOpen);
     this.classList.toggle('chat-open', this.isOpen);
-    sessionStorage.setItem(this.openStateKey, this.isOpen ? 'true' : 'false');
+    localStorage.setItem(this.openStateKey, this.isOpen ? 'true' : 'false');
   }
 
   loadChatState() {
-    const savedState = sessionStorage.getItem(this.openStateKey);
-    if (savedState === 'true') {
+    const savedState = localStorage.getItem(this.openStateKey);
+    if (savedState === null) {
+      // First visit - default to open
       this.isOpen = true;
       const chatWindow = this.shadowRoot.querySelector('#chatWindow');
       chatWindow.classList.add('open');
       this.classList.add('chat-open');
+    } else if (savedState === 'true') {
+      this.isOpen = true;
+      const chatWindow = this.shadowRoot.querySelector('#chatWindow');
+      chatWindow.classList.add('open');
+      this.classList.add('chat-open');
+    } else {
+      this.isOpen = false;
     }
   }
 
