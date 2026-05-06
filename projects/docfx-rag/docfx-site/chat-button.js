@@ -110,7 +110,7 @@ class ChatButton extends HTMLElement {
           position: absolute;
           bottom: 80px;
           right: 0;
-          width: 100vw
+          width: 100vw;
           max-width: 440px;
           height: 500px;
           background: white;
