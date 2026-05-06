@@ -58,7 +58,7 @@ async def chat_endpoint(msg: Message):
             semantic_result = qdrant.query_points(
                 collection_name=COLLECTION_NAME,
                 query=query_vector,
-                limit=5,
+                limit=1,
             )
 
             # 2b. Keyword search against payload text/header
@@ -93,7 +93,7 @@ async def chat_endpoint(msg: Message):
                         ),
                     ]
                 ),
-                limit=2,
+                limit=1,
                 with_payload=True,
                 with_vectors=False,
             )
@@ -132,11 +132,12 @@ async def chat_endpoint(msg: Message):
             context = "\n\n---\n\n".join(chunks)
 
             # Truncate context to 512 tokens to reduce attention cost
+            truncation = 350
             encoding = tiktoken.get_encoding("cl100k_base")
             context_tokens = encoding.encode(context)
-            if len(context_tokens) > 512:
-                context = encoding.decode(context_tokens[:512])
-                print(f"Truncated context from {len(context_tokens)} to 512 tokens")
+            if len(context_tokens) > truncation:
+                context = encoding.decode(context_tokens[:truncation])
+                print(f"Truncated context from {len(context_tokens)} to {truncation} tokens")
 
             if not context:
                 return {
@@ -149,20 +150,21 @@ async def chat_endpoint(msg: Message):
                 }
             # 3. Ask Ollama
             system_prompt = f"""
-            You are a documentation extraction system.
+            You are a documentation quote extractor.
 
-            You MUST follow these rules:
+            Rules:
 
-            - ONLY use exact information from the documentation context
-            - DO NOT paraphrase project names
-            - DO NOT rename anything
-            - DO NOT summarize unless the user explicitly asks
-            - DO NOT combine separate sentences into new wording
-            - Prefer copying exact sentences from the context
-            - If a project name appears in the context, reproduce it EXACTLY
-            - Never change spelling
-            - Never infer missing information
-            - Never add explanatory text
+            - Answer by copying text from the context only
+            - Do not explain
+            - Do not describe the project in your own words
+            - Do not generate new sentences
+            - Return at most 25 words
+            - Return one sentence or phrase only
+            - If the copied sentence is longer than 25 words, copy only the shortest exact phrase that answers the question
+            - Preserve exact spelling from the context
+            - Do not fix typos
+            - Do not add background information
+            - Do not infer anything
 
             If the answer is not explicitly present in the context, reply exactly:
 
@@ -199,14 +201,17 @@ async def chat_endpoint(msg: Message):
                                     {"role": "user", "content": msg.message},
                                 ],
                                 "stream": True,
+                                "keep_alive": "30m",
                                 "options": {
                                     "temperature": 0,
                                     "top_p": 0.1,
                                     "top_k": 10,
                                     "repeat_penalty": 1.15,
-                                    "num_predict": 128,
-                                    "num_batch": 128,
-                                    "seed": 42
+                                    "num_predict": 96,
+                                    "num_batch": 32,
+                                    "num_ctx": 512,
+                                    "seed": 42,
+                                    "stop": ["\n\n"]
                                 }
                             },
                         ) as response:

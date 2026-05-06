@@ -162,7 +162,7 @@ def generate_anchor(header: str) -> str:
 
 def doc_url_from_source(source: str, header: str = "") -> str:
     """Convert a markdown source path to a docfx documentation URL with anchor."""
-    base_url = "http://localhost:8080"
+    base_url = "https://hirekiran.com/kiri-chat"
 
     # Docfx treats README.md as index.html
     if source == "README.md":
