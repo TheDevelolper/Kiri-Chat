@@ -27,8 +27,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
 class Message(BaseModel):
     message: str
+
 
 @app.post("/chat")
 async def chat_endpoint(msg: Message):
@@ -39,12 +41,8 @@ async def chat_endpoint(msg: Message):
             # 1. Generate embedding
             embed_resp = await client.post(
                 f"{OLLAMA_URL}/api/embed",
-
                 json={
-                "options": {
-                    "num_predict": 512,
-                    "temperature": 0
-                },
+                    "options": {"num_predict": 512, "temperature": 0},
                     "model": EMBED_MODEL,
                     "input": msg.message,
                 },
@@ -58,7 +56,7 @@ async def chat_endpoint(msg: Message):
             semantic_result = qdrant.query_points(
                 collection_name=COLLECTION_NAME,
                 query=query_vector,
-                limit=1,
+                limit=2,
             )
 
             # 2b. Keyword search against payload text/header
@@ -67,17 +65,85 @@ async def chat_endpoint(msg: Message):
             # Need to keep this lightweight since it's run on every query and we don't want to add latency.
 
             # Tokenize message into keywords (filter out stop words and short words)
-            stop_words = {"the", "a", "an", "is", "are", "was", "were", "be", "been", "being",
-                         "have", "has", "had", "do", "does", "did", "will", "would", "could",
-                         "should", "may", "might", "must", "shall", "can", "need", "dare",
-                         "tell", "me", "about", "what", "where", "when", "why", "how",
-                         "i", "you", "he", "she", "it", "we", "they", "my", "your", "his",
-                         "her", "its", "our", "their", "this", "that", "these", "those",
-                         "and", "or", "but", "not", "if", "then", "else", "for", "of", "to",
-                         "in", "on", "at", "by", "from", "with", "about"}
-            
-            keywords = " ".join([word.lower() for word in re.findall(r'\b\w+\b', msg.message) 
-                       if word.lower() not in stop_words and len(word) > 2])
+            stop_words = {
+                "the",
+                "a",
+                "an",
+                "is",
+                "are",
+                "was",
+                "were",
+                "be",
+                "been",
+                "being",
+                "have",
+                "has",
+                "had",
+                "do",
+                "does",
+                "did",
+                "will",
+                "would",
+                "could",
+                "should",
+                "may",
+                "might",
+                "must",
+                "shall",
+                "can",
+                "need",
+                "dare",
+                "tell",
+                "me",
+                "about",
+                "what",
+                "where",
+                "when",
+                "how",
+                "i",
+                "you",
+                "he",
+                "she",
+                "it",
+                "we",
+                "they",
+                "my",
+                "your",
+                "his",
+                "her",
+                "its",
+                "our",
+                "their",
+                "this",
+                "that",
+                "these",
+                "those",
+                "and",
+                "or",
+                "but",
+                "not",
+                "if",
+                "then",
+                "else",
+                "for",
+                "of",
+                "to",
+                "in",
+                "on",
+                "at",
+                "by",
+                "from",
+                "with",
+                "about",
+            }
+
+            keywords = " ".join(
+                [
+                    word.lower()
+                    for word in re.findall(r"\b\w+\b", msg.message)
+                    if word.lower() not in stop_words and len(word) > 2
+                ]
+            )
             print(f"Extracted keywords: {keywords}")
             keyword_points, _ = qdrant.scroll(
                 collection_name=COLLECTION_NAME,
@@ -93,7 +159,7 @@ async def chat_endpoint(msg: Message):
                         ),
                     ]
                 ),
-                limit=1,
+                limit=2,
                 with_payload=True,
                 with_vectors=False,
             )
@@ -109,7 +175,7 @@ async def chat_endpoint(msg: Message):
             if not points_by_id:
                 for hit in semantic_result.points[:5]:
                     points_by_id[hit.id] = hit
-        
+
             # 2d. Build context
             chunks = []
 
@@ -131,13 +197,15 @@ async def chat_endpoint(msg: Message):
 
             context = "\n\n---\n\n".join(chunks)
 
-            # Truncate context to 512 tokens to reduce attention cost
-            truncation = 350
+            # Truncate context to 1024 tokens to reduce attention cost
+            truncation = 512
             encoding = tiktoken.get_encoding("cl100k_base")
             context_tokens = encoding.encode(context)
             if len(context_tokens) > truncation:
                 context = encoding.decode(context_tokens[:truncation])
-                print(f"Truncated context from {len(context_tokens)} to {truncation} tokens")
+                print(
+                    f"Truncated context from {len(context_tokens)} to {truncation} tokens"
+                )
 
             if not context:
                 return {
@@ -150,26 +218,31 @@ async def chat_endpoint(msg: Message):
                 }
             # 3. Ask Ollama
             system_prompt = f"""
-            You are a documentation quote extractor.
+            You are a helpful documentation assistant.
+
+            Use the documentation context to answer the user's question clearly and fully.
 
             Rules:
-
-            - Answer by copying text from the context only
-            - Do not explain
-            - Do not describe the project in your own words
-            - Do not generate new sentences
-            - Return at most 25 words
-            - Return one sentence or phrase only
-            - If the copied sentence is longer than 25 words, copy only the shortest exact phrase that answers the question
-            - Preserve exact spelling from the context
-            - Do not fix typos
-            - Do not add background information
-            - Do not infer anything
-
-            If the answer is not explicitly present in the context, reply exactly:
-
-            "I could not find that information in the documentation."
-
+            - Answer in your own words.
+            - Use only information supported by the context.
+            - Give a complete explanation, not just a quote.
+            - Prefer 2 to 6 paragraphs when useful.
+            - Include concrete details from the documentation.
+            - If steps are relevant, use a numbered list.
+            - If the answer depends on a specific page or section, mention that.
+            - Do not invent details.
+            - If the documentation does not contain enough information, say so clearly.
+            - If partially relevant information is present, explain what you found and what is missing.
+            - When including links to documentation pages, always output final public HTML URLs.
+            - Use this base URL for relative documentation links:
+            https://hirekiran.com/kiri-chat/docs
+            - Convert relative Markdown links to absolute HTML links:
+            - `getting-started.md` becomes `https://hirekiran.com/kiri-chat/docs/getting-started.html`
+            - `./getting-started.md` becomes `https://hirekiran.com/kiri-chat/docs/getting-started.html`
+            - `guides/setup.md` becomes `https://hirekiran.com/kiri-chat/docs/guides/setup.html`
+            - Never output links ending in `.md`.
+            - Do not change external links that already start with `http://` or `https://`.
+            
             === BEGIN CONTEXT ===
 
             {context}
@@ -203,16 +276,15 @@ async def chat_endpoint(msg: Message):
                                 "stream": True,
                                 "keep_alive": "30m",
                                 "options": {
-                                    "temperature": 0,
-                                    "top_p": 0.1,
-                                    "top_k": 10,
-                                    "repeat_penalty": 1.15,
-                                    "num_predict": 96,
-                                    "num_batch": 32,
-                                    "num_ctx": 512,
+                                    "temperature": 0.2,
+                                    "top_p": 0.9,
+                                    "top_k": 40,
+                                    "repeat_penalty": 1.08,
+                                    "num_predict": 768,
+                                    "num_batch": 64,
+                                    "num_ctx": 1024,
                                     "seed": 42,
-                                    "stop": ["\n\n"]
-                                }
+                                },
                             },
                         ) as response:
                             response.raise_for_status()
@@ -220,13 +292,29 @@ async def chat_endpoint(msg: Message):
                                 if line:
                                     try:
                                         chunk = json.loads(line)
-                                        if "message" in chunk and "content" in chunk["message"]:
+                                        if (
+                                            "message" in chunk
+                                            and "content" in chunk["message"]
+                                        ):
                                             # Send as SSE
-                                            token_data = json.dumps({"token": chunk["message"]["content"]})
+                                            token_data = json.dumps(
+                                                {"token": chunk["message"]["content"]}
+                                            )
                                             yield f"data: {token_data}\n\n"
                                         if chunk.get("done", False):
                                             # Send sources at the end
-                                            sources_data = json.dumps({"sources": [{"url": info["url"], "header": info["header"], "source": source} for source, info in source_links.items()]})
+                                            sources_data = json.dumps(
+                                                {
+                                                    "sources": [
+                                                        {
+                                                            "url": info["url"],
+                                                            "header": info["header"],
+                                                            "source": source,
+                                                        }
+                                                        for source, info in source_links.items()
+                                                    ]
+                                                }
+                                            )
                                             yield f"data: {sources_data}\n\n"
                                             yield "data: [DONE]\n\n"
                                     except json.JSONDecodeError:
@@ -237,8 +325,7 @@ async def chat_endpoint(msg: Message):
                     yield "data: [DONE]\n\n"
 
             return StreamingResponse(
-                generate_response(),
-                media_type="text/event-stream"
+                generate_response(), media_type="text/event-stream"
             )
 
     except httpx.ReadTimeout:
@@ -258,6 +345,7 @@ async def chat_endpoint(msg: Message):
             status_code=500,
             detail=str(e),
         )
+
 
 @app.get("/health")
 async def health_check():
