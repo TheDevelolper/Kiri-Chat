@@ -446,9 +446,9 @@ class ChatButton extends HTMLElement {
     });
   }
 
-  toggleChat() {
+  toggleChat(state) {
     const chatWindow = this.shadowRoot.querySelector('#chatWindow');
-    this.isOpen = !this.isOpen;
+    this.isOpen = state !== undefined ? state : !this.isOpen;
     chatWindow.classList.toggle('open', this.isOpen);
     this.classList.toggle('chat-open', this.isOpen);
     localStorage.setItem(this.openStateKey, this.isOpen ? 'true' : 'false');
@@ -520,6 +520,9 @@ class ChatButton extends HTMLElement {
             const link = document.createElement('a');
             link.href = source.url;
             link.textContent = source.text;
+            link.addEventListener('click', () => {
+              this.toggleChat(false);
+            });
             sourcesDiv.appendChild(link);
           });
           botMessage.appendChild(sourcesDiv);
@@ -612,7 +615,7 @@ class ChatButton extends HTMLElement {
     // Show loading spinner
     const loadingMessage = document.createElement('div');
     loadingMessage.className = 'message loading';
-    loadingMessage.innerHTML = '<div class="spinner"></div><span>Big thoughts, tiny machine.. hold up...</span>';
+    loadingMessage.innerHTML = '<div class="spinner"></div><span>Thinking 🤔...</span>';
     chatMessages.appendChild(loadingMessage);
     chatMessages.scrollTop = chatMessages.scrollHeight;
 
@@ -693,6 +696,9 @@ class ChatButton extends HTMLElement {
           const link = document.createElement('a');
           link.href = source.url;
           link.textContent = source.header || source.source;
+          link.addEventListener('click', () => {
+            this.toggleChat(false);
+          });
           sourcesDiv.appendChild(link);
         });
         botMessage.appendChild(sourcesDiv);
