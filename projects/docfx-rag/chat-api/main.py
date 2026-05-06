@@ -2,6 +2,7 @@ import httpx
 import re
 import tiktoken
 import json
+import os
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -10,11 +11,11 @@ from pydantic import BaseModel
 from qdrant_client import QdrantClient
 from qdrant_client.http.models import Filter, FieldCondition, MatchTextAny
 
-QDRANT_URL = "http://localhost:6333"
-COLLECTION_NAME = "docfx-docs"
-OLLAMA_URL = "http://127.0.0.1:11434"
-EMBED_MODEL = "all-minilm"
-MODEL = "tinyllama:1.1b"
+QDRANT_URL = os.getenv("QDRANT_URL", "http://localhost:6333")
+COLLECTION_NAME = os.getenv("COLLECTION_NAME", "docfx-docs")
+OLLAMA_URL = os.getenv("OLLAMA_HOST", "http://localhost:11434")
+EMBED_MODEL = os.getenv("EMBED_MODEL", "all-minilm")
+MODEL = os.getenv("MODEL", "tinyllama:1.1b")
 
 app = FastAPI(title="Chat API")
 
