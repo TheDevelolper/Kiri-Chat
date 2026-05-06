@@ -521,7 +521,9 @@ class ChatButton extends HTMLElement {
             link.href = source.url;
             link.textContent = source.text;
             link.addEventListener('click', () => {
-              this.toggleChat(false);
+              if (window.innerWidth <= 480) {
+                this.toggleChat(false);
+              }
             });
             sourcesDiv.appendChild(link);
           });
@@ -688,21 +690,23 @@ class ChatButton extends HTMLElement {
       }
 
       // Add source links if available
-      if (sources && sources.length > 0) {
-        const sourcesDiv = document.createElement('div');
-        sourcesDiv.className = 'message-sources';
-        sourcesDiv.innerHTML = '<div class="sources-label">Sources:</div>';
-        sources.forEach(source => {
-          const link = document.createElement('a');
-          link.href = source.url;
-          link.textContent = source.header || source.source;
-          link.addEventListener('click', () => {
-            this.toggleChat(false);
-          });
-          sourcesDiv.appendChild(link);
-        });
-        botMessage.appendChild(sourcesDiv);
-      }
+       if (sources && sources.length > 0) {
+         const sourcesDiv = document.createElement('div');
+         sourcesDiv.className = 'message-sources';
+         sourcesDiv.innerHTML = '<div class="sources-label">Sources:</div>';
+         sources.forEach(source => {
+           const link = document.createElement('a');
+           link.href = source.url;
+           link.textContent = source.header || source.source;
+           link.addEventListener('click', () => {
+             if (window.innerWidth <= 480) {
+               this.toggleChat(false);
+             }
+           });
+           sourcesDiv.appendChild(link);
+         });
+         botMessage.appendChild(sourcesDiv);
+       }
 
       const readButton = document.createElement('button');
       readButton.className = 'read-aloud-btn';
