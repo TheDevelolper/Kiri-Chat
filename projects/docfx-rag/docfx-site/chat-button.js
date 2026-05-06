@@ -90,9 +90,9 @@ class ChatButton extends HTMLElement {
           align-items: center;
           justify-content: center;
           transition: transform 0.2s ease, box-shadow 0.2s ease;
-          position: absolute;
-          bottom: 0;
-          right: 0;
+          position: fixed;
+          bottom: 1rem;
+          right: 1rem;
         }
 
         .chat-button:hover {
