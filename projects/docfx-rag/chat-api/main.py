@@ -1,7 +1,7 @@
 import httpx
 import re
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from qdrant_client import QdrantClient
@@ -11,7 +11,7 @@ QDRANT_URL = "http://localhost:6333"
 COLLECTION_NAME = "docfx-docs"
 OLLAMA_URL = "http://127.0.0.1:11434"
 EMBED_MODEL = "all-minilm"
-MODEL = "gemma:2b"
+MODEL = "tinyllama:1.1b"
 
 app = FastAPI(title="Chat API")
 
@@ -27,7 +27,7 @@ class Message(BaseModel):
     message: str
 
 @app.post("/chat")
-async def chat_endpoint(msg: Message):
+async def chat_endpoint(request: Request, msg: Message):
     try:
         qdrant = QdrantClient(url=QDRANT_URL)
 
@@ -137,14 +137,32 @@ async def chat_endpoint(msg: Message):
                     },
                 }
             # 3. Ask Ollama
-            system_prompt = (
-                "You are a helpful documentation assistant. "
-                "Answer the user's question using the documentation context below. "
-                "When the context contains a list, include the full relevant list. "
-                "Do not omit prerequisites, commands, scripts, or setup steps that appear in the context. "
-                "Do not invent details that are not present in the context.\n\n"
-                f"Documentation context:\n\n{context}"
-            )
+            system_prompt = f"""
+            You are a documentation extraction system.
+
+            You MUST follow these rules:
+
+            - ONLY use exact information from the documentation context
+            - DO NOT paraphrase project names
+            - DO NOT rename anything
+            - DO NOT summarize unless the user explicitly asks
+            - DO NOT combine separate sentences into new wording
+            - Prefer copying exact sentences from the context
+            - If a project name appears in the context, reproduce it EXACTLY
+            - Never change spelling
+            - Never infer missing information
+            - Never add explanatory text
+
+            If the answer is not explicitly present in the context, reply exactly:
+
+            "I could not find that information in the documentation."
+
+            === BEGIN CONTEXT ===
+
+            {context}
+
+            === END CONTEXT ===
+            """
 
             response = await client.post(
                 f"{OLLAMA_URL}/api/chat",
@@ -156,7 +174,12 @@ async def chat_endpoint(msg: Message):
                     ],
                     "stream": False,
                     "options": {
-                        "num_predict": 512
+                        "temperature": 0,
+                        "top_p": 0.1,
+                        "top_k": 10,
+                        "repeat_penalty": 1.15,
+                        "num_predict": 256,
+                        "seed": 42
                     }
                 },
             )
