@@ -439,7 +439,7 @@ class ChatButton extends HTMLElement {
     });
   }
 
-  async sendMessage() {
+   async sendMessage() {
     if (this.isSending) return;
 
     const messageInput = this.shadowRoot.querySelector('#messageInput');
@@ -471,27 +471,74 @@ class ChatButton extends HTMLElement {
 
     try {
       await this.loadMarked();
+      
+      // Create bot message container for streaming
+      const botMessage = document.createElement('div');
+      botMessage.className = 'message bot';
+      botMessage.innerHTML = '';
+      
+      // Remove loading spinner and add bot message
+      loadingMessage.remove();
+      chatMessages.appendChild(botMessage);
+      
+      let fullResponse = '';
+      let sources = [];
+
+      // Use fetch with streaming
       const response = await fetch('http://localhost:8000/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ message: text })
       });
 
-      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
 
-      // Remove loading spinner
-      loadingMessage.remove();
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
 
-      const botMessage = document.createElement('div');
-      botMessage.className = 'message bot';
-      botMessage.innerHTML = marked.parse(data.response || '');
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop() || '';
+
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            const dataStr = line.slice(6).trim();
+            if (dataStr === '[DONE]') continue;
+            
+            try {
+              const data = JSON.parse(dataStr);
+              if (data.token) {
+                fullResponse += data.token;
+                botMessage.innerHTML = marked.parse(fullResponse);
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+              }
+              if (data.sources) {
+                sources = data.sources;
+              }
+              if (data.error) {
+                throw new Error(data.error);
+              }
+            } catch (e) {
+              if (e instanceof SyntaxError) continue;
+              throw e;
+            }
+          }
+        }
+      }
 
       // Add source links if available
-      if (data.sources && data.sources.length > 0) {
+      if (sources && sources.length > 0) {
         const sourcesDiv = document.createElement('div');
         sourcesDiv.className = 'message-sources';
         sourcesDiv.innerHTML = '<div class="sources-label">Sources:</div>';
-        data.sources.forEach(source => {
+        sources.forEach(source => {
           const link = document.createElement('a');
           link.href = source.url;
           link.textContent = source.header || source.source;
@@ -500,12 +547,11 @@ class ChatButton extends HTMLElement {
         botMessage.appendChild(sourcesDiv);
       }
 
-      chatMessages.appendChild(botMessage);
       this.saveHistory();
     } catch (error) {
-      // Remove loading spinner
+      // Remove loading spinner if still present
       loadingMessage.remove();
-
+      
       const errorMessage = document.createElement('div');
       errorMessage.className = 'message bot';
       errorMessage.textContent = 'Error: Could not reach the chat API.';

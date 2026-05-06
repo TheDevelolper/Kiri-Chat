@@ -1,8 +1,11 @@
 import httpx
 import re
+import tiktoken
+import json
 
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 from qdrant_client import QdrantClient
 from qdrant_client.http.models import Filter, FieldCondition, MatchTextAny
@@ -27,7 +30,7 @@ class Message(BaseModel):
     message: str
 
 @app.post("/chat")
-async def chat_endpoint(request: Request, msg: Message):
+async def chat_endpoint(msg: Message):
     try:
         qdrant = QdrantClient(url=QDRANT_URL)
 
@@ -127,6 +130,13 @@ async def chat_endpoint(request: Request, msg: Message):
 
             context = "\n\n---\n\n".join(chunks)
 
+            # Truncate context to 512 tokens to reduce attention cost
+            encoding = tiktoken.get_encoding("cl100k_base")
+            context_tokens = encoding.encode(context)
+            if len(context_tokens) > 512:
+                context = encoding.decode(context_tokens[:512])
+                print(f"Truncated context from {len(context_tokens)} to 512 tokens")
+
             if not context:
                 return {
                     "response": "I couldn't find anything relevant in the documentation.",
@@ -164,30 +174,7 @@ async def chat_endpoint(request: Request, msg: Message):
             === END CONTEXT ===
             """
 
-            response = await client.post(
-                f"{OLLAMA_URL}/api/chat",
-                json={
-                    "model": MODEL,
-                    "messages": [
-                        {"role": "system", "content": system_prompt},
-                        {"role": "user", "content": msg.message},
-                    ],
-                    "stream": False,
-                    "options": {
-                        "temperature": 0,
-                        "top_p": 0.1,
-                        "top_k": 10,
-                        "repeat_penalty": 1.15,
-                        "num_predict": 256,
-                        "seed": 42
-                    }
-                },
-            )
-            response.raise_for_status()
-
-            data = response.json()
-     
-            # Build unique source links
+            # Build unique source links first (needed for streaming response)
             source_links = {}
             for point in points_by_id.values():
                 payload = point.payload or {}
@@ -197,32 +184,56 @@ async def chat_endpoint(request: Request, msg: Message):
                 if source and doc_url and source not in source_links:
                     source_links[source] = {"url": doc_url, "header": header}
 
-            return {
-    "response": data["message"]["content"],
-    "sources": [
-        {"url": info["url"], "header": info["header"], "source": source}
-        for source, info in source_links.items()
-    ],
-    "debug": {
-        "message": msg.message,
-        "semantic_results_count": len(semantic_result.points),
-        "keyword_results_count": len(keyword_points),
-        "merged_results_count": len(points_by_id),
-        "context_length": len(context),
-        "results": [
-            {
-                "id": point.id,
-                "score": getattr(point, "score", None),
-                "source": (point.payload or {}).get("source"),
-                "doc_url": (point.payload or {}).get("doc_url"),
-                "header": (point.payload or {}).get("header"),
-                "level": (point.payload or {}).get("level"),
-                "preview": (point.payload or {}).get("text", "")[:300],
-            }
-            for point in points_by_id.values()
-        ],
-    },
-}
+            # Stream response from Ollama
+            async def generate_response():
+                try:
+                    async with httpx.AsyncClient(timeout=300.0) as stream_client:
+                        async with stream_client.stream(
+                            "POST",
+                            f"{OLLAMA_URL}/api/chat",
+                            json={
+                                "model": MODEL,
+                                "messages": [
+                                    {"role": "system", "content": system_prompt},
+                                    {"role": "user", "content": msg.message},
+                                ],
+                                "stream": True,
+                                "options": {
+                                    "temperature": 0,
+                                    "top_p": 0.1,
+                                    "top_k": 10,
+                                    "repeat_penalty": 1.15,
+                                    "num_predict": 128,
+                                    "num_batch": 128,
+                                    "seed": 42
+                                }
+                            },
+                        ) as response:
+                            response.raise_for_status()
+                            async for line in response.aiter_lines():
+                                if line:
+                                    try:
+                                        chunk = json.loads(line)
+                                        if "message" in chunk and "content" in chunk["message"]:
+                                            # Send as SSE
+                                            token_data = json.dumps({"token": chunk["message"]["content"]})
+                                            yield f"data: {token_data}\n\n"
+                                        if chunk.get("done", False):
+                                            # Send sources at the end
+                                            sources_data = json.dumps({"sources": [{"url": info["url"], "header": info["header"], "source": source} for source, info in source_links.items()]})
+                                            yield f"data: {sources_data}\n\n"
+                                            yield "data: [DONE]\n\n"
+                                    except json.JSONDecodeError:
+                                        pass
+                except Exception as e:
+                    error_data = json.dumps({"error": str(e)})
+                    yield f"data: {error_data}\n\n"
+                    yield "data: [DONE]\n\n"
+
+            return StreamingResponse(
+                generate_response(),
+                media_type="text/event-stream"
+            )
 
     except httpx.ReadTimeout:
         raise HTTPException(
