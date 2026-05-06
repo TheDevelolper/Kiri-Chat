@@ -153,6 +153,29 @@ class ChatButton extends HTMLElement {
           background: white;
           color: #333;
           border: 1px solid #e0e0e0;
+          display: flex;
+          flex-direction: column;
+        }
+
+        .message.bot > *:not(.read-aloud-btn) {
+          align-self: flex-start;
+        }
+
+        .read-aloud-btn {
+          background: #f0f0f0;
+          border: 1px solid #e0e0e0;
+          color: #333;
+          cursor: pointer;
+          font-size: 12px;
+          padding: 6px 14px;
+          border-radius: 16px;
+          transition: all 0.2s ease;
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          margin-top: 10px;
+          margin-left: auto;
+          font-family: inherit;
         }
 
         .message.bot p {
@@ -222,6 +245,28 @@ class ChatButton extends HTMLElement {
           padding-top: 8px;
           border-top: 1px solid #e0e0e0;
           font-size: 0.8rem;
+          flex: 1;
+        }
+
+        .bot-footer {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          margin-top: 8px;
+          padding-top: 8px;
+          border-top: 1px solid #e0e0e0;
+        }
+
+        .bot-footer .message-sources {
+          border-top: none;
+          margin-top: 0;
+          padding-top: 0;
+          flex: 1;
+        }
+
+        .bot-footer .read-aloud-btn {
+          margin-left: 0;
+          flex-shrink: 0;
         }
 
         .message-sources a {
@@ -283,22 +328,6 @@ class ChatButton extends HTMLElement {
         .chat-input input:disabled {
           background: #f5f5f5;
           cursor: not-allowed;
-        }
-
-        .read-aloud-btn {
-          background: #f0f0f0;
-          border: 1px solid #e0e0e0;
-          color: #333;
-          cursor: pointer;
-          font-size: 12px;
-          padding: 6px 14px;
-          border-radius: 16px;
-          transition: all 0.2s ease;
-          display: inline-flex;
-          align-items: center;
-          gap: 6px;
-          margin-top: 10px;
-          font-family: inherit;
         }
 
         .read-aloud-btn:hover {
@@ -437,17 +466,23 @@ class ChatButton extends HTMLElement {
         const botMessage = document.createElement('div');
         botMessage.className = 'message bot';
         botMessage.innerHTML = msg.html;
+
+        // Create footer with sources and read aloud button
+        const footer = document.createElement('div');
+        footer.className = 'bot-footer';
+
+        // Add source links if available
         if (msg.sources && msg.sources.length > 0) {
           const sourcesDiv = document.createElement('div');
           sourcesDiv.className = 'message-sources';
           sourcesDiv.innerHTML = '<div class="sources-label">Sources:</div>';
-        msg.sources.forEach(source => {
+          msg.sources.forEach(source => {
             const link = document.createElement('a');
             link.href = source.url;
             link.textContent = source.text;
             sourcesDiv.appendChild(link);
           });
-          botMessage.appendChild(sourcesDiv);
+          footer.appendChild(sourcesDiv);
         }
 
         const readButton = document.createElement('button');
@@ -477,7 +512,8 @@ class ChatButton extends HTMLElement {
           }
         });
 
-        botMessage.appendChild(readButton);
+        footer.appendChild(readButton);
+        botMessage.appendChild(footer);
 
         chatMessages.appendChild(botMessage);
       }
@@ -608,6 +644,10 @@ class ChatButton extends HTMLElement {
         }
       }
 
+      // Create footer with sources and read aloud button
+      const footer = document.createElement('div');
+      footer.className = 'bot-footer';
+
       // Add source links if available
       if (sources && sources.length > 0) {
         const sourcesDiv = document.createElement('div');
@@ -619,9 +659,8 @@ class ChatButton extends HTMLElement {
           link.textContent = source.header || source.source;
           sourcesDiv.appendChild(link);
         });
-        botMessage.appendChild(sourcesDiv);
+        footer.appendChild(sourcesDiv);
       }
-
 
       const readButton = document.createElement('button');
       readButton.className = 'read-aloud-btn';
@@ -650,7 +689,8 @@ class ChatButton extends HTMLElement {
         }
       });
 
-      botMessage.appendChild(readButton);
+      footer.appendChild(readButton);
+      botMessage.appendChild(footer);
 
       this.saveHistory();
     } catch (error) {
