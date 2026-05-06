@@ -403,7 +403,7 @@ class ChatButton extends HTMLElement {
           <div class="message bot">Hello! How can I help you today?</div>
         </div>
         <div class="chat-input">
-          <input type="text" id="messageInput" placeholder="Type a message..." value="What is this project?" />
+          <input type="text" id="messageInput" placeholder="Type a message..." value="What is this project and why do I need it?" />
           <button id="sendBtn">Send</button>
         </div>
       </div>
