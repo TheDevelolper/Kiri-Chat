@@ -284,6 +284,47 @@ class ChatButton extends HTMLElement {
           background: #f5f5f5;
           cursor: not-allowed;
         }
+
+        .read-aloud-btn {
+          background: #f0f0f0;
+          border: 1px solid #e0e0e0;
+          color: #333;
+          cursor: pointer;
+          font-size: 12px;
+          padding: 6px 14px;
+          border-radius: 16px;
+          transition: all 0.2s ease;
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          margin-top: 10px;
+          font-family: inherit;
+        }
+
+        .read-aloud-btn:hover {
+          background: #e0e0e0;
+          border-color: #ccc;
+        }
+
+        .read-aloud-btn:active {
+          transform: scale(0.98);
+        }
+
+        .read-aloud-btn.speaking {
+          background: #0078d4;
+          color: white;
+          border-color: #0078d4;
+        }
+
+        .read-aloud-btn.speaking:hover {
+          background: #006cbd;
+        }
+
+        .read-aloud-btn svg {
+          width: 14px;
+          height: 14px;
+          flex-shrink: 0;
+        }
       </style>
       <div class="chat-window open" id="chatWindow">
         <div class="chat-header">
@@ -408,6 +449,36 @@ class ChatButton extends HTMLElement {
           });
           botMessage.appendChild(sourcesDiv);
         }
+
+        const readButton = document.createElement('button');
+        readButton.className = 'read-aloud-btn';
+        
+        const speakerIcon = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 5L6 9H2v6h4l5 4V5z"></path><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>';
+        const stopIcon = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 5L6 9H2v6h4l5 4V5z"></path><line x1="18" y1="6" x2="18" y2="18"></line><line x1="22" y1="6" x2="22" y2="18"></line></svg>';
+        
+        readButton.innerHTML = `${speakerIcon}<span>Read Aloud</span>`;
+
+        let utterance;
+        
+        readButton.addEventListener('click', () => {
+          if(utterance && speechSynthesis.speaking) {
+              speechSynthesis.cancel();
+              readButton.innerHTML = `${speakerIcon}<span>Read Aloud</span>`;
+              readButton.classList.remove('speaking');
+          } else {
+              readButton.innerHTML = `${stopIcon}<span>Stop Reading</span>`;
+              readButton.classList.add('speaking');
+              utterance = new SpeechSynthesisUtterance(botMessage.textContent);
+              utterance.onend = () => {
+                readButton.innerHTML = `${speakerIcon}<span>Read Aloud</span>`;
+                readButton.classList.remove('speaking');
+              };
+              speechSynthesis.speak(utterance);
+          }
+        });
+
+        botMessage.appendChild(readButton);
+
         chatMessages.appendChild(botMessage);
       }
     });
@@ -553,20 +624,30 @@ class ChatButton extends HTMLElement {
 
 
       const readButton = document.createElement('button');
-      readButton.textContent = 'Read Aloud';
+      readButton.className = 'read-aloud-btn';
+      
+      const speakerIcon = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 5L6 9H2v6h4l5 4V5z"></path><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>';
+      const stopIcon = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 5L6 9H2v6h4l5 4V5z"></path><line x1="18" y1="6" x2="18" y2="18"></line><line x1="22" y1="6" x2="22" y2="18"></line></svg>';
+      
+      readButton.innerHTML = `${speakerIcon}<span>Read Aloud</span>`;
 
       let utterance;
+      
       readButton.addEventListener('click', () => {
-
         if(utterance && speechSynthesis.speaking) {
             speechSynthesis.cancel();
-            readButton.textContent = 'Read Aloud';
+            readButton.innerHTML = `${speakerIcon}<span>Read Aloud</span>`;
+            readButton.classList.remove('speaking');
         } else {
-            readButton.textContent = 'Stop Reading';
+            readButton.innerHTML = `${stopIcon}<span>Stop Reading</span>`;
+            readButton.classList.add('speaking');
             utterance = new SpeechSynthesisUtterance(botMessage.textContent);
+            utterance.onend = () => {
+              readButton.innerHTML = `${speakerIcon}<span>Read Aloud</span>`;
+              readButton.classList.remove('speaking');
+            };
             speechSynthesis.speak(utterance);
         }
-    
       });
 
       botMessage.appendChild(readButton);
