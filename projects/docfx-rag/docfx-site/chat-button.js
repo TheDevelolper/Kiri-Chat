@@ -4,6 +4,7 @@ class ChatButton extends HTMLElement {
     this.attachShadow({ mode: 'open' });
     this.isOpen = true;
     this.markedLoaded = false;
+    this.isSending = false;
     this.storageKey = 'kiri-chat-history';
     this.openStateKey = 'kiri-chat-open';
   }
@@ -273,6 +274,16 @@ class ChatButton extends HTMLElement {
         .chat-input button:hover {
           background: #006cbd;
         }
+
+        .chat-input button:disabled {
+          background: #cccccc;
+          cursor: not-allowed;
+        }
+
+        .chat-input input:disabled {
+          background: #f5f5f5;
+          cursor: not-allowed;
+        }
       </style>
       <div class="chat-window open" id="chatWindow">
         <div class="chat-header">
@@ -429,11 +440,18 @@ class ChatButton extends HTMLElement {
   }
 
   async sendMessage() {
+    if (this.isSending) return;
+
     const messageInput = this.shadowRoot.querySelector('#messageInput');
+    const sendBtn = this.shadowRoot.querySelector('#sendBtn');
     const chatMessages = this.shadowRoot.querySelector('#chatMessages');
     const text = messageInput.value.trim();
 
     if (!text) return;
+
+    this.isSending = true;
+    messageInput.disabled = true;
+    sendBtn.disabled = true;
 
     const userMessage = document.createElement('div');
     userMessage.className = 'message user';
@@ -493,6 +511,11 @@ class ChatButton extends HTMLElement {
       errorMessage.textContent = 'Error: Could not reach the chat API.';
       chatMessages.appendChild(errorMessage);
       this.saveHistory();
+    } finally {
+      this.isSending = false;
+      messageInput.disabled = false;
+      sendBtn.disabled = false;
+      messageInput.focus();
     }
 
     chatMessages.scrollTop = chatMessages.scrollHeight;
